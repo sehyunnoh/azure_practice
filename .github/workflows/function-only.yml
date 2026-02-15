@@ -1,18 +1,14 @@
 name: Function Only
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'function/**'
+  workflow_dispatch:
 
 jobs:
   deploy-function:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Azure Login

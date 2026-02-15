@@ -1,52 +1,47 @@
-name: Terraform + Function
+name: Full Deploy (Terraform + Function)
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'terraform/**'
-      - 'function/**'
+  workflow_dispatch:
+    inputs:
+      run_terraform:
+        description: "Run Terraform?"
+        required: true
+        default: "true"
+      run_function:
+        description: "Deploy Function?"
+        required: true
+        default: "true"
 
 jobs:
   terraform:
+    if: ${{ github.event.inputs.run_terraform == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Azure Login
-        uses: azure/login@v1
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Terraform Init
-        run: terraform init
+      - run: terraform init
         working-directory: terraform
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
+      - run: terraform apply -auto-approve
         working-directory: terraform
 
   deploy-function:
     needs: terraform
+    if: ${{ github.event.inputs.run_function == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v1
+      - uses: actions/checkout@v4
+      - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy Azure Function
-        uses: Azure/functions-action@v1
+      - uses: Azure/functions-action@v1
         with:
           app-name: poc-blob-func-123
           package: function

@@ -1,18 +1,19 @@
 name: Terraform Only
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'terraform/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment name"
+        required: true
+        default: "pilot"
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Terraform
@@ -25,6 +26,10 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
+        working-directory: terraform
+
+      - name: Terraform Plan
+        run: terraform plan
         working-directory: terraform
 
       - name: Terraform Apply
