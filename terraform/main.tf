@@ -52,7 +52,7 @@ resource "azurerm_linux_function_app" "func" {
   service_plan_id            = azurerm_service_plan.plan.id
   storage_account_name       = azurerm_storage_account.storage.name
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key
-  version                    = "~4"
+
   site_config {
     application_stack {
       python_version = "3.10"
