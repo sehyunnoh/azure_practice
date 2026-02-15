@@ -3,7 +3,7 @@ variable "location" {
 }
 
 variable "resource_group" {
-  default = "poc-rg"
+  default = "poc-rg-terraform"
 }
 
 resource "azurerm_resource_group" "rg" {
