@@ -49,9 +49,23 @@ resource "azurerm_linux_function_app" "func" {
   storage_account_name       = azurerm_storage_account.storage.name
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key
 
+  identity {
+    type = "SystemAssigned"
+  }
+
   site_config {
     application_stack {
       python_version = "3.10"
     }
   }
+
+  app_settings = {
+    STORAGE_ACCOUNT_URL = "https://${azurerm_storage_account.storage.name}.blob.core.windows.net"
+  }
+}
+
+resource "azurerm_role_assignment" "func_storage_access" {
+  scope                = azurerm_storage_account.storage.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_linux_function_app.func.identity[0].principal_id
 }
