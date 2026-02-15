@@ -1,7 +1,3 @@
-provider "azurerm" {
-  features {}
-}
-
 variable "location" {
   default = "Canada Central"
 }
