@@ -5,6 +5,13 @@ terraform {
       version = "~>3.0"
     }
   }
+
+  backend "azurerm" {
+    resource_group_name  = "pilot-rg"
+    storage_account_name = "pilotstorage123"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+  }
 }
 
 provider "azurerm" {
@@ -16,11 +23,11 @@ variable "location" {
 }
 
 variable "resource_group" {
-  default = "poc-rg2"
+  default = "pilot-rg"
 }
 
 variable "storage_account_name" {
-  default = "poc123teststorage2"
+  default = "pilotstorage123"
 }
 
 # Resource Group
@@ -52,7 +59,7 @@ resource "azurerm_storage_container" "containers" {
 
 # Function App Service Plan
 resource "azurerm_service_plan" "plan" {
-  name                = "poc-func-plan"
+  name                = "pilot-func-plan"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   os_type             = "Linux"
@@ -61,7 +68,7 @@ resource "azurerm_service_plan" "plan" {
 
 # Function App (Managed Identity)
 resource "azurerm_linux_function_app" "func" {
-  name                       = "poc-blob-func-app"
+  name                       = "pilot-blob-func"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
   service_plan_id            = azurerm_service_plan.plan.id
@@ -79,11 +86,12 @@ resource "azurerm_linux_function_app" "func" {
   }
 
   app_settings = {
+    # Storage URL는 Managed Identity 사용 시 읽는 코드에서 reference
     STORAGE_ACCOUNT_URL = "https://${azurerm_storage_account.storage.name}.blob.core.windows.net"
   }
 }
 
-# RBAC Role Assignment (Function -> Storage)
+# Role Assignment: Function -> Storage
 resource "azurerm_role_assignment" "func_storage_access" {
   scope                = azurerm_storage_account.storage.id
   role_definition_name = "Storage Blob Data Contributor"
