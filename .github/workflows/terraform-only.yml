@@ -8,71 +8,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ 코드 체크아웃
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2️⃣ Terraform 설치
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # 3️⃣ Azure 로그인 (GitHub Secret 사용)
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 4️⃣ Backend Storage Account + Container 확인/생성
+      # 🛠️ Backend 전용 리소스 생성 (Management Layer)
       - name: Ensure Terraform Backend Exists
         run: |
           set -e
-
-          RESOURCE_GROUP="pilot-rg"
-          STORAGE_ACCOUNT="pilotstorage123"
+          MGMT_RG="pilot-mgmt-rg"
+          STORAGE_ACCOUNT="pilotbackendstorage123" # 이름 중복 주의 (전역 유일)
           CONTAINER="tfstate"
           LOCATION="Canada Central"
 
-          # Resource Group 체크
-          if ! az group show --name $RESOURCE_GROUP &>/dev/null; then
-              echo "Resource Group $RESOURCE_GROUP does not exist. Creating..."
-              az group create --name $RESOURCE_GROUP --location "$LOCATION"
-          else
-              echo "Resource Group $RESOURCE_GROUP already exists."
+          # 1. 관리용 Resource Group 생성
+          if ! az group show --name $MGMT_RG &>/dev/null; then
+              echo "Creating Management RG: $MGMT_RG"
+              az group create --name $MGMT_RG --location "$LOCATION"
           fi
 
-          # Storage Account 체크
-          if ! az storage account show --name $STORAGE_ACCOUNT --resource-group $RESOURCE_GROUP &>/dev/null; then
-              echo "Storage Account $STORAGE_ACCOUNT does not exist. Creating..."
+          # 2. State 저장용 Storage Account 생성
+          if ! az storage account show --name $STORAGE_ACCOUNT --resource-group $MGMT_RG &>/dev/null; then
+              echo "Creating Backend Storage: $STORAGE_ACCOUNT"
               az storage account create \
                 --name $STORAGE_ACCOUNT \
-                --resource-group $RESOURCE_GROUP \
+                --resource-group $MGMT_RG \
                 --location "$LOCATION" \
                 --sku Standard_LRS \
                 --kind StorageV2
-          else
-              echo "Storage Account $STORAGE_ACCOUNT already exists."
           fi
 
-          # Container 체크
-          ACCOUNT_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP --account-name $STORAGE_ACCOUNT --query "[0].value" -o tsv)
+          # 3. Blob Container 생성
+          ACCOUNT_KEY=$(az storage account keys list --resource-group $MGMT_RG --account-name $STORAGE_ACCOUNT --query "[0].value" -o tsv)
           if ! az storage container exists --name $CONTAINER --account-name $STORAGE_ACCOUNT --account-key $ACCOUNT_KEY | grep true; then
-              echo "Container $CONTAINER does not exist. Creating..."
               az storage container create --name $CONTAINER --account-name $STORAGE_ACCOUNT --account-key $ACCOUNT_KEY
-          else
-              echo "Container $CONTAINER already exists."
           fi
 
-      # 5️⃣ Terraform Init (Remote Backend 사용)
+      # 🚀 Terraform 실행 (Service Layer)
       - name: Terraform Init
         run: terraform init
         working-directory: terraform
 
-      # 6️⃣ Terraform Plan (확인용)
       - name: Terraform Plan
         run: terraform plan
         working-directory: terraform
 
-      # 7️⃣ Terraform Apply
       - name: Terraform Apply
         run: terraform apply -auto-approve
         working-directory: terraform
