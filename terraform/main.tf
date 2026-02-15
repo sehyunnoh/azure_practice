@@ -1,18 +1,37 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~>3.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
 variable "location" {
   default = "Canada Central"
 }
 
 variable "resource_group" {
-  default = "poc-rg-terraform"
+  default = "poc-rg2"
 }
 
+variable "storage_account_name" {
+  default = "poc123teststorage2"
+}
+
+# Resource Group
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group
   location = var.location
 }
 
+# Storage Account
 resource "azurerm_storage_account" "storage" {
-  name                     = "poc123teststorage"
+  name                     = var.storage_account_name
   resource_group_name      = azurerm_resource_group.rg.name
   location                 = azurerm_resource_group.rg.location
   account_tier             = "Standard"
@@ -40,7 +59,7 @@ resource "azurerm_service_plan" "plan" {
   sku_name            = "Y1" # Consumption Plan
 }
 
-# Function App
+# Function App (Managed Identity)
 resource "azurerm_linux_function_app" "func" {
   name                       = "poc-blob-func-123"
   location                   = azurerm_resource_group.rg.location
@@ -64,6 +83,7 @@ resource "azurerm_linux_function_app" "func" {
   }
 }
 
+# RBAC Role Assignment (Function -> Storage)
 resource "azurerm_role_assignment" "func_storage_access" {
   scope                = azurerm_storage_account.storage.id
   role_definition_name = "Storage Blob Data Contributor"

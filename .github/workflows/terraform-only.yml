@@ -2,11 +2,6 @@ name: Terraform Only
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "Environment name"
-        required: true
-        default: "pilot"
 
 jobs:
   terraform:
