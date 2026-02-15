@@ -61,7 +61,7 @@ resource "azurerm_service_plan" "plan" {
 
 # Function App (Managed Identity)
 resource "azurerm_linux_function_app" "func" {
-  name                       = "poc-blob-func-123"
+  name                       = "poc-blob-func-app"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
   service_plan_id            = azurerm_service_plan.plan.id
