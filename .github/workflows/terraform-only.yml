@@ -26,7 +26,7 @@ jobs:
           MGMT_RG="pilot-mgmt-rg"
           STORAGE_ACCOUNT="pilotbackendstorage123" # 이름 중복 주의 (전역 유일)
           CONTAINER="tfstate"
-          LOCATION="Canada Central"
+          LOCATION="East US"
 
           # 1. 관리용 Resource Group 생성
           if ! az group show --name $MGMT_RG &>/dev/null; then

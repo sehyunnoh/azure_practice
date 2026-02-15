@@ -21,7 +21,7 @@ provider "azurerm" {
 
 # --- Variables ---
 variable "location" {
-  default = "Canada Central"
+  default = "East US"
 }
 
 variable "service_rg_name" {
