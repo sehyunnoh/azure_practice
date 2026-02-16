@@ -18,8 +18,8 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3️⃣ Ensure Oryx build is enabled (server-side pip install)
-      - name: Enable Oryx Build
+      # 3️⃣ Set Function App environment variables (SCM build + Oryx)
+      - name: Set Function App Settings
         run: |
           az functionapp config appsettings set \
             --name pilot-blob-func \
@@ -27,23 +27,15 @@ jobs:
             --settings \
               SCM_DO_BUILD_DURING_DEPLOYMENT=true \
               ENABLE_ORYX_BUILD=true \
-              WEBSITE_RUN_FROM_PACKAGE=1
-
-      # 4️⃣ Set application environment variables
-      - name: Set Function App Settings
-        run: |
-          az functionapp config appsettings set \
-            --name pilot-blob-func \
-            --resource-group pilot-service-rg \
-            --settings \
+              WEBSITE_RUN_FROM_PACKAGE=1 \
               STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }} \
               STORAGE_ACCOUNT_KEY=${{ secrets.STORAGE_ACCOUNT_KEY }}
 
-      # 5️⃣ Deploy Function (no zip, no manual pip install)
+      # 4️⃣ Deploy Function (Oryx 빌드 서버 측에서 수행)
       - name: Deploy Azure Function
         uses: Azure/functions-action@v1
         with:
           app-name: pilot-blob-func
           package: function
           scm-do-build-during-deployment: true
-          enable-oryx-build: true 
+          enable-oryx-build: true
