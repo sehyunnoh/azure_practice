@@ -1,0 +1,53 @@
+name: Deploy Azure Function (create python_packages)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-function:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ 소스 체크아웃
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2️⃣ 파이썬 설정 (라이브러리 직접 설치를 위해 필요)
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # 3️⃣ 종속성 라이브러리 직접 설치 (.python_packages 폴더 생성)
+      - name: Install dependencies
+        run: |
+          # function 폴더로 이동 (폴더명이 다르면 수정하세요)
+          cd function 
+          python -m pip install --upgrade pip
+          # --target 옵션을 사용하여 라이브러리를 특정 폴더에 물리적으로 설치
+          pip install -r requirements.txt --target=".python_packages/lib/site-packages"
+
+      # 4️⃣ Azure 로그인
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # 5️⃣ 환경 변수 설정 (여기서 WEBSITE_RUN_FROM_PACKAGE는 1로 설정)
+      - name: Configure Function App
+        run: |
+          az functionapp config appsettings set \
+            --name pilot-blob-func \
+            --resource-group pilot-service-rg \
+            --settings \
+              STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }} \
+              STORAGE_ACCOUNT_KEY=${{ secrets.STORAGE_ACCOUNT_KEY }} \
+              WEBSITE_RUN_FROM_PACKAGE=1 \
+              SCM_DO_BUILD_DURING_DEPLOYMENT=false
+
+      # 6️⃣ 배포 (이미 빌드된 .python_packages를 포함해서 전송)
+      - name: Deploy Azure Function
+        uses: Azure/functions-action@v1
+        with:
+          app-name: pilot-blob-func
+          package: function
