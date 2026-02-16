@@ -20,6 +20,48 @@ jobs:
         working-directory: bootstrap
         run: terraform init -input=false
 
-      - name: Terraform Apply (create backend)
+      - name: Smart Import or Create Backend Resources
+        working-directory: bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RG="pilot-mgmt-rg"
+          SA="pilotbackendstorage123"
+          CONTAINER="tfstate"
+          SUBSCRIPTION=$(az account show --query id -o tsv)
+
+          echo "🔍 Checking Resource Group..."
+          if az group show --name "$RG" &>/dev/null; then
+            echo "➡️ RG exists. Importing into Terraform..."
+            terraform import azurerm_resource_group.mgmt "/subscriptions/$SUBSCRIPTION/resourceGroups/$RG" || true
+          else
+            echo "➡️ RG does not exist. Terraform will create it."
+          fi
+
+          echo "🔍 Checking Storage Account..."
+          if az storage account show --name "$SA" --resource-group "$RG" &>/dev/null; then
+            echo "➡️ Storage Account exists. Importing..."
+            terraform import azurerm_storage_account.backend "/subscriptions/$SUBSCRIPTION/resourceGroups/$RG/providers/Microsoft.Storage/storageAccounts/$SA" || true
+          else
+            echo "➡️ Storage Account does not exist. Terraform will create it."
+          fi
+
+          echo "🔍 Checking Storage Container..."
+          ACCOUNT_KEY=$(az storage account keys list --resource-group "$RG" --account-name "$SA" --query "[0].value" -o tsv || echo "")
+
+          if [ -n "$ACCOUNT_KEY" ]; then
+            EXISTS=$(az storage container exists --name "$CONTAINER" --account-name "$SA" --account-key "$ACCOUNT_KEY" --query "exists" -o tsv)
+            if [ "$EXISTS" = "true" ]; then
+              echo "➡️ Container exists. Importing..."
+              terraform import azurerm_storage_container.tfstate "https://$SA.blob.core.windows.net/$CONTAINER" || true
+            else
+              echo "➡️ Container does not exist. Terraform will create it."
+            fi
+          else
+            echo "⚠️ Storage Account key unavailable. Container import skipped."
+          fi
+
+      - name: Terraform Apply (create or reconcile backend)
         working-directory: bootstrap
         run: terraform apply -auto-approve -input=false
