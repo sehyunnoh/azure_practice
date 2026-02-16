@@ -1,10 +1,10 @@
-name: Terraform Only
+name: Terraform Bootstrap
 
 on:
   workflow_dispatch:
 
 jobs:
-  terraform:
+  bootstrap:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,14 +16,10 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Terraform Init
-        working-directory: terraform
+      - name: Terraform Init (local backend)
+        working-directory: bootstrap
         run: terraform init -input=false
 
-      - name: Terraform Plan
-        working-directory: terraform
-        run: terraform plan -input=false
-
-      - name: Terraform Apply
-        working-directory: terraform
+      - name: Terraform Apply (create backend)
+        working-directory: bootstrap
         run: terraform apply -auto-approve -input=false
