@@ -93,21 +93,13 @@ resource "azurerm_service_plan" "plan" {
 # 5. Function App
 # -----------------------------
 resource "azurerm_linux_function_app" "func" {
-  name                       = "pilot-blob-func"
-  location                   = azurerm_resource_group.rg.location
-  resource_group_name        = azurerm_resource_group.rg.name
-  service_plan_id            = azurerm_service_plan.plan.id
+  name                = "pilot-blob-func"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  service_plan_id     = azurerm_service_plan.plan.id
+
   storage_account_name       = azurerm_storage_account.storage.name
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key
-
-  depends_on = [
-    azurerm_service_plan.plan,
-    azurerm_storage_container.containers
-  ]
-
-  identity {
-    type = "SystemAssigned"
-  }
 
   site_config {
     application_stack {
@@ -116,19 +108,8 @@ resource "azurerm_linux_function_app" "func" {
   }
 
   app_settings = {
-    STORAGE_ACCOUNT_URL = "https://${azurerm_storage_account.storage.name}.blob.core.windows.net"
+    FUNCTIONS_WORKER_RUNTIME = "python"
+    STORAGE_ACCOUNT_URL      = "https://${azurerm_storage_account.storage.name}.blob.core.windows.net"
+    STORAGE_ACCOUNT_KEY      = azurerm_storage_account.storage.primary_access_key
   }
-}
-
-# -----------------------------
-# 6. Role Assignment
-# -----------------------------
-resource "azurerm_role_assignment" "func_storage_access" {
-  scope                = azurerm_storage_account.storage.id
-  role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_linux_function_app.func.identity[0].principal_id
-
-  depends_on = [
-    azurerm_linux_function_app.func
-  ]
 }

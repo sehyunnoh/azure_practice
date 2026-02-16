@@ -1,11 +1,9 @@
 import logging
 import os
-from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobClient
 
-credential = DefaultAzureCredential()
-
 STORAGE_ACCOUNT_URL = os.getenv("STORAGE_ACCOUNT_URL")
+STORAGE_ACCOUNT_KEY = os.getenv("STORAGE_ACCOUNT_KEY")
 
 ARCHIVE_CONTAINER = "archive"
 
@@ -15,23 +13,18 @@ OUT_CONTAINERS = {
     "economics": "out-economics"
 }
 
-
 def main(myblob: bytes, name: str):
-    logging.info(f"Blob trigger fired!")
+    logging.info("Blob trigger fired!")
     logging.info(f"File name: {name}")
+    
+    
 
-    validation_passed = True
-
-    if not validation_passed:
-        logging.error("Validation failed")
-        return
-
-    # Archive
+    # Archive upload
     archive_client = BlobClient(
         account_url=STORAGE_ACCOUNT_URL,
         container_name=ARCHIVE_CONTAINER,
         blob_name=name,
-        credential=credential
+        credential=STORAGE_ACCOUNT_KEY
     )
     archive_client.upload_blob(myblob, overwrite=True)
 
@@ -43,7 +36,7 @@ def main(myblob: bytes, name: str):
                 account_url=STORAGE_ACCOUNT_URL,
                 container_name=container,
                 blob_name=name,
-                credential=credential
+                credential=STORAGE_ACCOUNT_KEY
             )
             out_client.upload_blob(myblob, overwrite=True)
             return
