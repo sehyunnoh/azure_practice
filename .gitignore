@@ -1,0 +1,58 @@
+# -----------------------------
+# Azure Functions (Python)
+# -----------------------------
+
+# Local settings (NEVER commit)
+local.settings.json
+
+# Python packages installed for Azure Functions
+.python_packages/
+.venv/
+env/
+venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# VS Code settings
+.vscode/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Azure Functions Core Tools artifacts
+bin/
+obj/
+
+# ZIP packages created for deployment
+function.zip
+*.zip
+
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+
+# Python virtual environment (if created at root)
+*/.venv/
+*/env/
+*/venv/
+
+# PyCharm
+.idea/
+
+# Temporary files
+*.tmp
+*.temp

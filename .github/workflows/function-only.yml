@@ -11,13 +11,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        working-directory: function
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt --target ".python_packages/lib/site-packages"
+
+      - name: Zip function app
+        run: |
+          cd function
+          zip -r ../function.zip .
+
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Set Function App Settings
+        run: |
+          az functionapp config appsettings set \
+            --name poc-blob-func-123 \
+            --resource-group YOUR_RESOURCE_GROUP \
+            --settings \
+              STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }} \
+              STORAGE_ACCOUNT_KEY=${{ secrets.STORAGE_ACCOUNT_KEY }}
+
       - name: Deploy Azure Function
         uses: Azure/functions-action@v1
         with:
           app-name: poc-blob-func-123
-          package: function
+          package: function.zip
