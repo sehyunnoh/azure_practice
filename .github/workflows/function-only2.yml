@@ -1,0 +1,59 @@
+name: Deploy Azure Function (Local Python Build + Zip)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-function:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout source
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2️⃣ Set up Python
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # 3️⃣ Install Linux dependencies locally and build .python_packages
+      - name: Build .python_packages locally
+        working-directory: function
+        run: |
+          python -m pip install --upgrade pip
+          rm -rf .python_packages
+          mkdir -p .python_packages/lib/site-packages
+          # Install dependencies into .python_packages (Linux compatible)
+          pip install azure-functions azure-storage-blob==12.17.0 cryptography==3.4.8 --target=".python_packages/lib/site-packages"
+
+      # 4️⃣ Zip the function app including .python_packages
+      - name: Create function.zip
+        working-directory: function
+        run: |
+          zip -r ../function.zip * .python_packages
+
+      # 5️⃣ Azure login
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # 6️⃣ Set Function App settings (env vars)
+      - name: Set Function App Settings
+        run: |
+          az functionapp config appsettings set \
+            --name pilot-blob-func \
+            --resource-group pilot-service-rg \
+            --settings \
+              STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }} \
+              STORAGE_ACCOUNT_KEY=${{ secrets.STORAGE_ACCOUNT_KEY }} \
+              WEBSITE_RUN_FROM_PACKAGE=1
+
+      # 7️⃣ Deploy function using zip
+      - name: Deploy Azure Function
+        uses: Azure/functions-action@v1
+        with:
+          app-name: pilot-blob-func
+          package: function.zip
