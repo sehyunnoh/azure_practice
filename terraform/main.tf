@@ -78,11 +78,11 @@ resource "azurerm_storage_container" "containers" {
 # 4. App Service Plan (Y1)
 # -----------------------------
 resource "azurerm_service_plan" "plan" {
-  name                = "pilot-func-plan"
+  name                = "pilot-func-plan-v2"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   os_type             = "Linux"
-  sku_name            = "B1"
+  sku_name            = "Y1"
 
   depends_on = [
     azurerm_storage_account.storage
