@@ -8,50 +8,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Checkout source
+      # 1️⃣ Checkout source
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2) Set up Python (no cache)
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      # 3) Clean previous build artifacts INSIDE the function folder
-      - name: Clean python packages
-        working-directory: function
-        run: |
-          rm -rf .python_packages
-          mkdir -p .python_packages/lib/site-packages
-
-      # 4) Install dependencies into .python_packages
-      - name: Install dependencies
-        working-directory: function
-        run: |
-          python -m pip install --upgrade pip
-          pip install azure-functions --target ".python_packages/lib/site-packages"
-          pip install azure-storage-blob==12.17.0 --target ".python_packages/lib/site-packages"
-          pip install cryptography==3.4.8 --target ".python_packages/lib/site-packages"
-
-      # 5) Remove local.settings.json (절대 배포되면 안 됨)
-      - name: Remove local.settings.json
-        working-directory: function
-        run: rm -f local.settings.json
-
-      # 6) Create ZIP package (숨김 폴더 포함)
-      - name: Zip function app
-        run: |
-          cd function
-          zip -r ../function.zip * .python_packages
-
-      # 7) Azure Login
+      # 2️⃣ Azure Login
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 8) Set Azure Function App Settings (환경 변수)
+      # 3️⃣ Ensure Oryx build is enabled (server-side pip install)
+      - name: Enable Oryx Build
+        run: |
+          az functionapp config appsettings set \
+            --name pilot-blob-func \
+            --resource-group pilot-service-rg \
+            --settings \
+              SCM_DO_BUILD_DURING_DEPLOYMENT=true \
+              ENABLE_ORYX_BUILD=true
+
+      # 4️⃣ Set application environment variables
       - name: Set Function App Settings
         run: |
           az functionapp config appsettings set \
@@ -61,9 +38,9 @@ jobs:
               STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }} \
               STORAGE_ACCOUNT_KEY=${{ secrets.STORAGE_ACCOUNT_KEY }}
 
-      # 9) Deploy ZIP to Azure Function
+      # 5️⃣ Deploy Function (no zip, no manual pip install)
       - name: Deploy Azure Function
         uses: Azure/functions-action@v1
         with:
           app-name: pilot-blob-func
-          package: function.zip
+          package: function
