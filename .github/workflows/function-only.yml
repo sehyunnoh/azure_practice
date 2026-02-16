@@ -8,17 +8,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout source
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2️⃣ Azure Login
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3️⃣ Set application environment variables + enable Oryx build
+      # 여기서 원격 빌드(Oryx)를 강제로 활성화합니다.
       - name: Configure Function App
         run: |
           az functionapp config appsettings set \
@@ -29,13 +27,12 @@ jobs:
               STORAGE_ACCOUNT_KEY=${{ secrets.STORAGE_ACCOUNT_KEY }} \
               SCM_DO_BUILD_DURING_DEPLOYMENT=true \
               ENABLE_ORYX_BUILD=true \
-              WEBSITE_RUN_FROM_PACKAGE=true
+              WEBSITE_RUN_FROM_PACKAGE=1
 
-      # 4️⃣ Deploy Function
       - name: Deploy Azure Function
         uses: Azure/functions-action@v1
         with:
           app-name: pilot-blob-func
           package: function
+          # 핵심: 서버에서 직접 빌드하도록 설정
           scm-do-build-during-deployment: true
-          enable-oryx-build: true
