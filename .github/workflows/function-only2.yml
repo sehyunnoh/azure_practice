@@ -33,7 +33,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 5️⃣ 환경 변수 설정 (여기서 WEBSITE_RUN_FROM_PACKAGE는 1로 설정)
+      # 5️⃣ 환경 변수 설정 (중요: 모든 빌드 옵션을 끕니다)
       - name: Configure Function App
         run: |
           az functionapp config appsettings set \
@@ -42,8 +42,9 @@ jobs:
             --settings \
               STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }} \
               STORAGE_ACCOUNT_KEY=${{ secrets.STORAGE_ACCOUNT_KEY }} \
-              WEBSITE_RUN_FROM_PACKAGE=1 \
-              SCM_DO_BUILD_DURING_DEPLOYMENT=false
+              SCM_DO_BUILD_DURING_DEPLOYMENT=false \
+              ENABLE_ORYX_BUILD=false \
+              WEBSITE_RUN_FROM_PACKAGE=1
 
       # 6️⃣ 배포 (이미 빌드된 .python_packages를 포함해서 전송)
       - name: Deploy Azure Function
