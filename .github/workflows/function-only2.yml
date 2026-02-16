@@ -26,8 +26,14 @@ jobs:
           # function 폴더로 이동 (폴더명이 다르면 수정하세요)
           cd function 
           python -m pip install --upgrade pip
-          # --target 옵션을 사용하여 라이브러리를 특정 폴더에 물리적으로 설치
-          pip install -r requirements.txt --target=".python_packages/lib/site-packages"
+          # platform 옵션을 주어 구형 리눅스와 호환되는 바이너리를 가져오도록 합니다.
+          pip install \
+            --target=".python_packages/lib/site-packages" \
+            --platform manylinux2014_x86_64 \
+            --implementation cp \
+            --python-version 3.10 \
+            --only-binary=:all: \
+            -r requirements.txt
 
       # 4️⃣ Azure 로그인
       - name: Azure Login
