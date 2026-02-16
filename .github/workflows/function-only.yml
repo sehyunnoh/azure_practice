@@ -45,3 +45,5 @@ jobs:
         with:
           app-name: pilot-blob-func
           package: function
+          scm-do-build-during-deployment: true
+          enable-oryx-build: true 
