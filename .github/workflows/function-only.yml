@@ -26,7 +26,8 @@ jobs:
             --resource-group pilot-service-rg \
             --settings \
               SCM_DO_BUILD_DURING_DEPLOYMENT=true \
-              ENABLE_ORYX_BUILD=true
+              ENABLE_ORYX_BUILD=true \
+              WEBSITE_RUN_FROM_PACKAGE=1
 
       # 4️⃣ Set application environment variables
       - name: Set Function App Settings
