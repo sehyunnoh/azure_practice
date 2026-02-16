@@ -18,7 +18,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3️⃣ Set Function App environment variables (SCM build + Oryx)
+      # 3️⃣ Set Function App Settings (SCM build + Oryx + env vars)
       - name: Set Function App Settings
         run: |
           az functionapp config appsettings set \
@@ -27,11 +27,11 @@ jobs:
             --settings \
               SCM_DO_BUILD_DURING_DEPLOYMENT=true \
               ENABLE_ORYX_BUILD=true \
-              WEBSITE_RUN_FROM_PACKAGE=1 \
+              WEBSITE_RUN_FROM_PACKAGE=0 \
               STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }} \
               STORAGE_ACCOUNT_KEY=${{ secrets.STORAGE_ACCOUNT_KEY }}
 
-      # 4️⃣ Deploy Function (Oryx 빌드 서버 측에서 수행)
+      # 4️⃣ Deploy Function folder directly
       - name: Deploy Azure Function
         uses: Azure/functions-action@v1
         with:
