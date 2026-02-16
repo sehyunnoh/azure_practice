@@ -35,7 +35,7 @@ jobs:
       - name: Set Function App Settings
         run: |
           az functionapp config appsettings set \
-            --name poc-blob-func-123 \
+            --name pilot-blob-func \
             --resource-group YOUR_RESOURCE_GROUP \
             --settings \
               STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }} \
@@ -44,5 +44,5 @@ jobs:
       - name: Deploy Azure Function
         uses: Azure/functions-action@v1
         with:
-          app-name: poc-blob-func-123
+          app-name: pilot-blob-func
           package: function.zip
