@@ -48,7 +48,7 @@ jobs:
         run: |
           az functionapp config appsettings set \
             --name pilot-blob-func \
-            --resource-group pilot-rg \
+            --resource-group pilot-service-rg \
             --settings \
               STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }} \
               STORAGE_ACCOUNT_KEY=${{ secrets.STORAGE_ACCOUNT_KEY }}
