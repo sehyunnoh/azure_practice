@@ -124,10 +124,21 @@ resource "azurerm_linux_function_app" "func" {
 # -----------------------------
 # 6. Role Assignment (Function → Storage)
 # -----------------------------
+
+locals {
+  func_principal_id = try(
+    azurerm_linux_function_app.func.identity[0].principal_id,
+    null
+  )
+}
+
+
 resource "azurerm_role_assignment" "func_storage_blob_contrib" {
+  count = local.func_principal_id != null ? 1 : 0
+
   scope                = azurerm_storage_account.storage.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_linux_function_app.func.identity[0].principal_id
+  principal_id         = local.func_principal_id
 
   depends_on = [
     azurerm_linux_function_app.func
