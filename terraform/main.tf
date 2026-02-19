@@ -110,9 +110,9 @@ resource "azurerm_linux_function_app" "func" {
   }
 
   site_config {
-    linux_fx_version  = "PYTHON|3.10" # Python 3.10 지정
-    always_on         = false         # Flex Consumption에서는 false
-    use_32_bit_worker = false
+    application_stack {
+      python_version = "3.10" # Python 3.10 지정
+    }
   }
 
   app_settings = {
