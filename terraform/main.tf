@@ -72,7 +72,7 @@ locals {
 resource "azurerm_storage_container" "containers" {
   for_each              = toset(local.containers)
   name                  = each.value
-  storage_account_name  = azurerm_storage_account.storage.name
+  storage_account_id    = azurerm_storage_account.storage.id
   container_access_type = "private"
 }
 
@@ -128,4 +128,8 @@ resource "azurerm_role_assignment" "func_storage_blob_contrib" {
   scope                = azurerm_storage_account.storage.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_linux_function_app.func.identity[0].principal_id
+
+  depends_on = [
+    azurerm_linux_function_app.func
+  ]
 }
