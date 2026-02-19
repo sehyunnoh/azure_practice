@@ -99,8 +99,7 @@ resource "azurerm_linux_function_app" "func" {
   name                = "pilot-blob-func"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-
-  service_plan_id = azurerm_service_plan.func_plan.id
+  service_plan_id     = azurerm_service_plan.func_plan.id
 
   storage_account_name       = azurerm_storage_account.storage.name
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key
@@ -109,22 +108,31 @@ resource "azurerm_linux_function_app" "func" {
     type = "SystemAssigned"
   }
 
+  # --- This block is REQUIRED for Flex Consumption (FC1) ---
+  function_app_config {
+    deployment {
+      storage {
+        type         = "blobContainer"
+        container_id = azurerm_storage_container.containers["inbound"].resource_manager_id # Example container
+      }
+    }
+    # You can also define scale settings here
+    # max_instance_count = 100 
+  }
+
   site_config {
     application_stack {
-      python_version = "3.10" # Python 3.10 지정
+      python_version = "3.10"
     }
   }
 
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME = "python"
+    # Note: WEBSITE_RUN_FROM_PACKAGE is often handled automatically 
+    # by the Flex deployment engine, but keeping it won't hurt.
     WEBSITE_RUN_FROM_PACKAGE = "1"
   }
-
-  depends_on = [
-    azurerm_service_plan.func_plan
-  ]
 }
-
 
 # -----------------------------
 # 6. Role Assignment (Function → Storage)
