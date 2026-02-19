@@ -16,20 +16,14 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 🔥 Provider 캐시 제거 (가장 중요)
-      - name: Clean Terraform cache
-        working-directory: terraform
-        run: rm -rf .terraform .terraform.lock.hcl
-
-      # 🔥 Provider 4.x 설치
       - name: Terraform Init (upgrade provider)
         working-directory: terraform
-        run: terraform init -upgrade -input=false
+        run: terraform init -input=false
 
       - name: Terraform Plan
         working-directory: terraform
-        run: terraform plan -input=false
+        run: terraform plan -out=tfplan -input=false
 
       - name: Terraform Apply
         working-directory: terraform
-        run: terraform apply -auto-approve -input=false
+        run: terraform apply -auto-approve tfplan

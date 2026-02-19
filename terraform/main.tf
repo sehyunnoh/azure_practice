@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~>4.0"
+      version = "~> 4.0"
     }
   }
 
@@ -60,27 +60,46 @@ resource "azurerm_storage_account" "storage" {
 # 3. Blob Containers
 # -----------------------------
 locals {
-  containers = ["inbound", "archive", "out-united", "out-elf", "out-economics"]
+  containers = [
+    "inbound",
+    "archive",
+    "out-united",
+    "out-elf",
+    "out-economics"
+  ]
 }
 
 resource "azurerm_storage_container" "containers" {
   for_each              = toset(local.containers)
   name                  = each.value
-  storage_account_id    = azurerm_storage_account.storage.id
+  storage_account_name  = azurerm_storage_account.storage.name
   container_access_type = "private"
 }
 
 # -----------------------------
-# 4. Function App (Flex Consumption)
+# 4. Flex Consumption Plan (FC1)
 # -----------------------------
-resource "azurerm_linux_function_app_flex" "func" {
+resource "azurerm_service_plan" "func_plan" {
+  name                = "pilot-flex-plan"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+
+  os_type  = "Linux"
+  sku_name = "FC1" # 🔥 Flex Consumption
+}
+
+# -----------------------------
+# 5. Linux Function App (Python)
+# -----------------------------
+resource "azurerm_linux_function_app" "func" {
   name                = "pilot-blob-func"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
 
-  sku_name = "FC1"
+  service_plan_id = azurerm_service_plan.func_plan.id
 
-  storage_account_id = azurerm_storage_account.storage.id
+  storage_account_name       = azurerm_storage_account.storage.name
+  storage_account_access_key = azurerm_storage_account.storage.primary_access_key
 
   identity {
     type = "SystemAssigned"
@@ -94,15 +113,19 @@ resource "azurerm_linux_function_app_flex" "func" {
 
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME = "python"
-    STORAGE_ACCOUNT_URL      = "https://${azurerm_storage_account.storage.name}.blob.core.windows.net"
+    WEBSITE_RUN_FROM_PACKAGE = "1"
   }
+
+  depends_on = [
+    azurerm_service_plan.func_plan
+  ]
 }
 
 # -----------------------------
-# 5. Role Assignment (Function → Storage)
+# 6. Role Assignment (Function → Storage)
 # -----------------------------
 resource "azurerm_role_assignment" "func_storage_blob_contrib" {
   scope                = azurerm_storage_account.storage.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_linux_function_app_flex.func.identity.principal_id
+  principal_id         = azurerm_linux_function_app.func.identity.principal_id
 }
