@@ -127,5 +127,5 @@ resource "azurerm_linux_function_app" "func" {
 resource "azurerm_role_assignment" "func_storage_blob_contrib" {
   scope                = azurerm_storage_account.storage.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_linux_function_app.func.identity.principal_id
+  principal_id         = azurerm_linux_function_app.func.identity[0].principal_id
 }
