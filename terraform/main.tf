@@ -66,40 +66,26 @@ locals {
 resource "azurerm_storage_container" "containers" {
   for_each              = toset(local.containers)
   name                  = each.value
-  storage_account_name  = azurerm_storage_account.storage.name
+  storage_account_id    = azurerm_storage_account.storage.id
   container_access_type = "private"
-
-  depends_on = [
-    azurerm_storage_account.storage
-  ]
 }
 
 # -----------------------------
-# 4. App Service Plan (Y1)
+# 4. Function App (Flex Consumption)
 # -----------------------------
-resource "azurerm_service_plan" "plan" {
-  name                = "pilot-func-plan-v3"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  os_type             = "Linux"
-  sku_name            = "B1"
-
-  depends_on = [
-    azurerm_storage_account.storage
-  ]
-}
-
-# -----------------------------
-# 5. Function App
-# -----------------------------
-resource "azurerm_linux_function_app" "func" {
+resource "azurerm_linux_function_app_flex" "func" {
   name                = "pilot-blob-func"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  service_plan_id     = azurerm_service_plan.plan.id
 
-  storage_account_name       = azurerm_storage_account.storage.name
-  storage_account_access_key = azurerm_storage_account.storage.primary_access_key
+  sku_name = "FC1"
+
+  # Flex Consumption requires a storage account reference
+  storage_account_id = azurerm_storage_account.storage.id
+
+  identity {
+    type = "SystemAssigned"
+  }
 
   site_config {
     application_stack {
@@ -110,6 +96,14 @@ resource "azurerm_linux_function_app" "func" {
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME = "python"
     STORAGE_ACCOUNT_URL      = "https://${azurerm_storage_account.storage.name}.blob.core.windows.net"
-    STORAGE_ACCOUNT_KEY      = azurerm_storage_account.storage.primary_access_key
   }
+}
+
+# -----------------------------
+# 5. Role Assignment (Function → Storage)
+# -----------------------------
+resource "azurerm_role_assignment" "func_storage_blob_contrib" {
+  scope                = azurerm_storage_account.storage.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_linux_function_app_flex.func.identity.principal_id
 }
