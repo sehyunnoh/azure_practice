@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~>3.0"
+      version = "~>4.0"
     }
   }
 
@@ -80,7 +80,6 @@ resource "azurerm_linux_function_app_flex" "func" {
 
   sku_name = "FC1"
 
-  # Flex Consumption requires a storage account reference
   storage_account_id = azurerm_storage_account.storage.id
 
   identity {

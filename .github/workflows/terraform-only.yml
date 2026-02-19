@@ -16,9 +16,10 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Terraform Init
+      # Provider 4.x 설치를 위해 반드시 -upgrade 필요
+      - name: Terraform Init (upgrade provider)
         working-directory: terraform
-        run: terraform init -input=false
+        run: terraform init -upgrade -input=false
 
       - name: Terraform Plan
         working-directory: terraform
