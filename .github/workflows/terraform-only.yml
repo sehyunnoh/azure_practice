@@ -16,7 +16,12 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Provider 4.x 설치를 위해 반드시 -upgrade 필요
+      # 🔥 Provider 캐시 제거 (가장 중요)
+      - name: Clean Terraform cache
+        working-directory: terraform
+        run: rm -rf .terraform .terraform.lock.hcl
+
+      # 🔥 Provider 4.x 설치
       - name: Terraform Init (upgrade provider)
         working-directory: terraform
         run: terraform init -upgrade -input=false
