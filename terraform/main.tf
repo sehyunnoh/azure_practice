@@ -93,7 +93,7 @@ resource "azurerm_service_plan" "func_plan" {
 }
 
 # -----------------------------
-# 5. Linux Function App (Python)
+# 5. Linux Function App (Python + MSI)
 # -----------------------------
 resource "azurerm_linux_function_app" "func" {
   name                = "pilot-blob-func"
@@ -110,9 +110,9 @@ resource "azurerm_linux_function_app" "func" {
   }
 
   site_config {
-    application_stack {
-      python_version = "3.10"
-    }
+    linux_fx_version  = "PYTHON|3.10" # Python 3.10 지정
+    always_on         = false         # Flex Consumption에서는 false
+    use_32_bit_worker = false
   }
 
   app_settings = {
@@ -125,17 +125,16 @@ resource "azurerm_linux_function_app" "func" {
   ]
 }
 
+
 # -----------------------------
 # 6. Role Assignment (Function → Storage)
 # -----------------------------
-
 locals {
   func_principal_id = try(
     azurerm_linux_function_app.func.identity[0].principal_id,
     null
   )
 }
-
 
 resource "azurerm_role_assignment" "func_storage_blob_contrib" {
   scope                = azurerm_storage_account.storage.id

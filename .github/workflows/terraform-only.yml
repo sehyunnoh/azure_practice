@@ -1,4 +1,4 @@
-name: Terraform Only
+name: Terraform Apply
 
 on:
   workflow_dispatch:
@@ -8,17 +8,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - uses: hashicorp/setup-terraform@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-      - uses: azure/login@v1
+      - name: Azure Login
+        uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Terraform Init (upgrade provider)
+      - name: Terraform Init
         working-directory: terraform
-        run: terraform init -input=false
+        run: terraform init -input=false -upgrade
 
       - name: Terraform Plan
         working-directory: terraform
