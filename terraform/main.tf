@@ -72,39 +72,41 @@ resource "azurerm_service_plan" "func_plan" {
 }
 
 # -----------------------------
-# 5. Linux Function App
+# 5. Linux Function App (Flex Consumption)
 # -----------------------------
 resource "azurerm_linux_function_app" "func" {
   name                = var.func_app_name
   resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+  location            = var.location
   service_plan_id     = azurerm_service_plan.func_plan.id
 
-  storage_account_name = azurerm_storage_account.storage.name
+  storage_account_name          = azurerm_storage_account.storage.name
+  storage_uses_managed_identity = true
 
   identity {
     type = "SystemAssigned"
   }
 
-  # Flex Consumption requires function_app_config on create
-  function_app_config {
-    deployment {
-      storage {
-        type         = "blobContainer"
-        container_id = azurerm_storage_container.containers["deploy"].resource_manager_id
-      }
-    }
-  }
-
-
   site_config {
+    # Flex Consumption 전용 설정 블록
+    # 만약 아래 flex_consumption 블록도 에러가 난다면, 
+    # v4.x 최신 버전에서는 해당 값을 application_stack 내에서 처리하거나 
+    # 별도 인자로 처리하게 됩니다.
+
     application_stack {
       python_version = "3.10"
     }
+
+    # Flex Consumption 플랜 배포 설정
+    # v4.x에서는 아래 속성을 통해 배포 컨테이너를 지정합니다.
+    container_registry_use_managed_identity = true
   }
 
+  # 만약 특정 컨테이너를 배포 원본으로 지정해야 한다면 
+  # 아래 app_settings를 통해 설정하는 것이 가장 확실한 호환 방법입니다.
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME = "python"
+    WEBSITE_RUN_FROM_PACKAGE = azurerm_storage_container.containers["deploy"].resource_manager_id
   }
 }
 
