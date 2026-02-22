@@ -16,6 +16,22 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Parse tfvars
+        id: tfvars
+        working-directory: bootstrap
+        run: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          # Parse terraform.tfvars into environment variables
+          while IFS='= ' read -r key value; do
+            if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+              value="${value%\"}"
+              value="${value#\"}"
+              echo "$key=$value" >> $GITHUB_ENV
+            fi
+          done < terraform.tfvars
+
       - name: Terraform Init (local backend)
         working-directory: bootstrap
         run: terraform init -input=false
@@ -26,15 +42,17 @@ jobs:
         run: |
           set -euo pipefail
 
-          RG="pilot-mgmt-rg"
-          SA="pilotbackendstorage123"
-          CONTAINER="tfstate"
+          RG="$backend_rg_name"
+          SA="$backend_storage_name"
+          CONTAINER="$backend_container_name"
+          LOCATION="$backend_location"
           SUBSCRIPTION=$(az account show --query id -o tsv)
 
           echo "🔍 Checking Resource Group..."
           if az group show --name "$RG" &>/dev/null; then
-            echo "➡️ RG exists. Importing into Terraform..."
-            terraform import azurerm_resource_group.mgmt "/subscriptions/$SUBSCRIPTION/resourceGroups/$RG" || true
+            echo "➡️ RG exists. Importing..."
+            terraform import azurerm_resource_group.mgmt \
+              "/subscriptions/$SUBSCRIPTION/resourceGroups/$RG" || true
           else
             echo "➡️ RG does not exist. Terraform will create it."
           fi
@@ -42,24 +60,29 @@ jobs:
           echo "🔍 Checking Storage Account..."
           if az storage account show --name "$SA" --resource-group "$RG" &>/dev/null; then
             echo "➡️ Storage Account exists. Importing..."
-            terraform import azurerm_storage_account.backend "/subscriptions/$SUBSCRIPTION/resourceGroups/$RG/providers/Microsoft.Storage/storageAccounts/$SA" || true
+            terraform import azurerm_storage_account.backend \
+              "/subscriptions/$SUBSCRIPTION/resourceGroups/$RG/providers/Microsoft.Storage/storageAccounts/$SA" || true
           else
             echo "➡️ Storage Account does not exist. Terraform will create it."
           fi
 
           echo "🔍 Checking Storage Container..."
-          ACCOUNT_KEY=$(az storage account keys list --resource-group "$RG" --account-name "$SA" --query "[0].value" -o tsv || echo "")
+          if az storage account show --name "$SA" --resource-group "$RG" &>/dev/null; then
+            echo "➡️ Container exists? Checking..."
+            EXISTS=$(az storage container exists \
+              --name "$CONTAINER" \
+              --account-name "$SA" \
+              --query "exists" -o tsv || echo "false")
 
-          if [ -n "$ACCOUNT_KEY" ]; then
-            EXISTS=$(az storage container exists --name "$CONTAINER" --account-name "$SA" --account-key "$ACCOUNT_KEY" --query "exists" -o tsv)
-            if [ "$EXISTS" = "true" ]; then
+            if [[ "$EXISTS" == "true" ]]; then
               echo "➡️ Container exists. Importing..."
-              terraform import azurerm_storage_container.tfstate "https://$SA.blob.core.windows.net/$CONTAINER" || true
+              terraform import azurerm_storage_container.tfstate \
+                "/subscriptions/$SUBSCRIPTION/resourceGroups/$RG/providers/Microsoft.Storage/storageAccounts/$SA/blobServices/default/containers/$CONTAINER" || true
             else
               echo "➡️ Container does not exist. Terraform will create it."
             fi
           else
-            echo "⚠️ Storage Account key unavailable. Container import skipped."
+            echo "⚠️ Storage Account not accessible. Skipping container import."
           fi
 
       - name: Terraform Apply (create or reconcile backend)
