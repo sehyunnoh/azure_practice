@@ -43,6 +43,7 @@ function.zip
 terraform/.terraform/
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
+bootstrap/.terraform/
 
 # Python virtual environment (if created at root)
 */.venv/

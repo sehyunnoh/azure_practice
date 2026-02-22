@@ -12,6 +12,11 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
 
+      - name: Clean bootstrap Terraform directory
+        working-directory: bootstrap
+        run: rm -rf .terraform
+
+
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
