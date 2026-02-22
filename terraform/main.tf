@@ -80,20 +80,10 @@ resource "azurerm_linux_function_app" "func" {
   location            = azurerm_resource_group.rg.location
   service_plan_id     = azurerm_service_plan.func_plan.id
 
-  storage_account_name       = azurerm_storage_account.storage.name
-  storage_account_access_key = azurerm_storage_account.storage.primary_access_key
+  storage_account_name = azurerm_storage_account.storage.name
 
   identity {
     type = "SystemAssigned"
-  }
-
-  function_app_config {
-    deployment {
-      storage {
-        type         = "blobContainer"
-        container_id = azurerm_storage_container.containers["inbound"].resource_manager_id
-      }
-    }
   }
 
   site_config {
@@ -104,7 +94,6 @@ resource "azurerm_linux_function_app" "func" {
 
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME = "python"
-    WEBSITE_RUN_FROM_PACKAGE = "1"
   }
 }
 
@@ -114,5 +103,5 @@ resource "azurerm_linux_function_app" "func" {
 resource "azurerm_role_assignment" "func_storage_blob_contrib" {
   scope                = azurerm_storage_account.storage.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_linux_function_app.func.identity[0].principal_id
+  principal_id         = azurerm_linux_function_app.func.identity.principal_id
 }
