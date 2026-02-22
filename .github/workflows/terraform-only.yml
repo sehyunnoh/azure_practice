@@ -21,7 +21,7 @@ jobs:
 
       - name: Terraform Init
         working-directory: terraform
-        run: terraform init -input=false -upgrade
+        run: terraform init -input=false -upgrade -backend-config=backend.hcl
 
       - name: Terraform Plan
         working-directory: terraform
