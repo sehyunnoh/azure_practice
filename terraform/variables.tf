@@ -33,21 +33,3 @@ variable "func_app_name" {
   type    = string
   default = "pilot-blob-func"
 }
-
-# Backend variables
-variable "backend_rg_name" {
-  type = string
-}
-
-variable "backend_storage_name" {
-  type = string
-}
-
-variable "backend_container_name" {
-  type = string
-}
-
-variable "backend_state_key" {
-  type    = string
-  default = "terraform.tfstate"
-}
