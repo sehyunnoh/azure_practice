@@ -86,6 +86,17 @@ resource "azurerm_linux_function_app" "func" {
     type = "SystemAssigned"
   }
 
+  # Flex Consumption requires function_app_config on create
+  function_app_config {
+    deployment {
+      storage {
+        type         = "blobContainer"
+        container_id = azurerm_storage_container.containers["deploy"].resource_manager_id
+      }
+    }
+  }
+
+
   site_config {
     application_stack {
       python_version = "3.10"
