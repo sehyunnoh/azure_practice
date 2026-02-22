@@ -1,13 +1,13 @@
-backend_rg_name        = "pilot-mgmt-rg"
-backend_storage_name   = "pilotbackendstorage123"
+backend_rg_name        = "dev-mgmt-rg"
+backend_storage_name   = "devbackendstorage123"
 backend_container_name = "tfstate"
 
 location             = "Canada Central"
-service_rg_name      = "pilot-service-rg"
-service_storage_name = "pilotappstorage123"
+service_rg_name      = "dev-service-rg"
+service_storage_name = "devappstorage123"
 
-func_plan_name = "pilot-flex-plan"
-func_app_name  = "pilot-blob-func"
+func_plan_name = "dev-flex-plan"
+func_app_name  = "dev-blob-func"
 containers = [
   "inbound",
   "archive",
