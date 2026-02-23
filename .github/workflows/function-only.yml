@@ -34,3 +34,7 @@ jobs:
           app-name: dev-blob-func
           package: function
           remote-build: true
+          respect-pom-xml: false
+          respect-funcignore: false
+          scm-do-build-during-deployment: false
+          enable-oryx-build: false
