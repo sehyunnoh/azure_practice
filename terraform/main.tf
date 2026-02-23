@@ -80,11 +80,15 @@ resource "azurerm_function_app_flex_consumption" "func" {
   location            = azurerm_resource_group.rg.location
   service_plan_id     = azurerm_service_plan.func_plan.id
 
+  # Managed Identity 필수
+  identity {
+    type = "SystemAssigned"
+  }
+
   # Flex 필수 설정
   storage_container_type      = "blobContainer"
   storage_container_endpoint  = "${azurerm_storage_account.storage.primary_blob_endpoint}${azurerm_storage_container.containers["deploy"].name}"
-  storage_authentication_type = "StorageAccountConnectionString"
-  storage_access_key          = azurerm_storage_account.storage.primary_access_key
+  storage_authentication_type = "SystemAssignedIdentity"
 
   runtime_name    = "python"
   runtime_version = "3.10"
@@ -93,10 +97,6 @@ resource "azurerm_function_app_flex_consumption" "func" {
   instance_memory_in_mb  = 2048
 
   site_config {}
-
-  identity {
-    type = "SystemAssigned"
-  }
 }
 
 # -----------------------------
