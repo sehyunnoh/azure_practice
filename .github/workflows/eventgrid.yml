@@ -26,7 +26,6 @@ jobs:
             --source-resource-id "/subscriptions/${{ secrets.AZ_SUBSCRIPTION }}/resourceGroups/dev-service-rg/providers/Microsoft.Storage/storageAccounts/devappstorage123" \
             --endpoint-type azurefunction \
             --endpoint "/subscriptions/${{ secrets.AZ_SUBSCRIPTION }}/resourceGroups/dev-service-rg/providers/Microsoft.Web/sites/dev-blob-func/functions/InboundRouter" \
-            --identity "/subscriptions/${{ secrets.AZ_SUBSCRIPTION }}/resourceGroups/dev-service-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/dev-blob-func" \
-            --subject-begins-with "/blobServices/default/containers/inbound/" \
+            --delivery-identity systemassigned \
             --included-event-types "Microsoft.Storage.BlobCreated" \
-            --enable-validation true
+            --subject-begins-with "/blobServices/default/containers/inbound/"
