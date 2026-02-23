@@ -10,4 +10,5 @@ containers = [
   "out-united",
   "out-elf",
   "out-economics",
+  "deploy" # ← Function App 코드 배포 전용
 ]

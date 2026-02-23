@@ -59,12 +59,6 @@ resource "azurerm_storage_container" "containers" {
   container_access_type = "private"
 }
 
-resource "azurerm_storage_container" "deploy" {
-  name                  = "deploy"
-  storage_account_id    = azurerm_storage_account.storage.id
-  container_access_type = "private"
-}
-
 # -----------------------------
 # 4. Flex Consumption Plan
 # -----------------------------
@@ -88,7 +82,7 @@ resource "azurerm_function_app_flex_consumption" "func" {
 
   # Flex 필수 설정
   storage_container_type      = "blobContainer"
-  storage_container_endpoint  = "${azurerm_storage_account.storage.primary_blob_endpoint}${azurerm_storage_container.deploy.name}"
+  storage_container_endpoint  = "${azurerm_storage_account.storage.primary_blob_endpoint}${azurerm_storage_container.containers["deploy"].name}"
   storage_authentication_type = "StorageAccountConnectionString"
   storage_access_key          = azurerm_storage_account.storage.primary_access_key
 
