@@ -1,46 +1,32 @@
-name: Deploy EventGrid Subscription
+name: Create EventGrid Subscription
 
 on:
   workflow_dispatch:
 
 jobs:
-  deploy-eventgrid:
+  create-eventgrid:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      # 1️⃣ 체크아웃
+      - name: Checkout repo
         uses: actions/checkout@v4
 
+      # 2️⃣ Azure 로그인
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Get Function Key
-        id: get_func_key
+      # 3️⃣ EventGrid Subscription 생성
+      - name: Create EventGrid Subscription
         run: |
-          FUNC_KEY=$(az functionapp function keys list \
-            --name dev-blob-func \
-            --resource-group dev-service-rg \
-            --function-name InboundRouter \
-            --query "default" -o tsv)
-          echo "function_key=$FUNC_KEY" >> $GITHUB_OUTPUT
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ./terraform
-
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan \
-          -var "resource_group_name=dev-service-rg" \
-          -var "storage_account_name=devappstorage123" \
-          -var "function_app_name=dev-blob-func" \
-          -var "function_key=${{ steps.get_func_key.outputs.function_key }}"
-        working-directory: ./terraform
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-        working-directory: ./terraform
+          az eventgrid event-subscription create \
+            --name inbound-blob-subscription \
+            --source-resource-id "/subscriptions/${{ secrets.AZ_SUBSCRIPTION }}/resourceGroups/dev-service-rg/providers/Microsoft.Storage/storageAccounts/devappstorage123" \
+            --endpoint-type azurefunction \
+            --endpoint "/subscriptions/${{ secrets.AZ_SUBSCRIPTION }}/resourceGroups/dev-service-rg/providers/Microsoft.Web/sites/dev-blob-func/functions/InboundRouter" \
+            --identity "/subscriptions/${{ secrets.AZ_SUBSCRIPTION }}/resourceGroups/dev-service-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/dev-blob-func" \
+            --subject-begins-with "/blobServices/default/containers/inbound/" \
+            --included-event-types "Microsoft.Storage.BlobCreated" \
+            --enable-validation true
