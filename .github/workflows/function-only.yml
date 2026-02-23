@@ -18,7 +18,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3️⃣ Function App App Settings 구성
+      # 3️⃣ 최소 App Settings만 설정
       - name: Configure Function App
         run: |
           az functionapp config appsettings set \
@@ -27,16 +27,10 @@ jobs:
             --settings \
               STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }}
 
-          # Flex Consumption에서는 원격 빌드 관련 App Settings 제거
-          az functionapp config appsettings delete \
-            --name dev-blob-func \
-            --resource-group dev-service-rg \
-            --setting-names SCM_DO_BUILD_DURING_DEPLOYMENT ENABLE_ORYX_BUILD WEBSITE_RUN_FROM_PACKAGE
-
       # 4️⃣ 배포 (Flex Consumption 전용)
       - name: Deploy Azure Function
         uses: Azure/functions-action@v1
         with:
           app-name: dev-blob-func
           package: function
-          remote-build: true  # Flex Consumption 필수
+          remote-build: true
