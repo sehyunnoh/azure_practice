@@ -56,3 +56,5 @@ bootstrap/.terraform/
 # Temporary files
 *.tmp
 *.temp
+
+secrets.md

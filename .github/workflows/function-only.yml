@@ -16,25 +16,29 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 5️⃣ 빌드 설정을 수정 (WEBSITE_RUN_FROM_PACKAGE를 제거하거나 0으로)
-      - name: Configure Function App
+      # -----------------------------
+      # 5️⃣ Function App 환경 변수 설정 (MSI 사용)
+      # -----------------------------
+      - name: Configure Function App Settings
         run: |
           az functionapp config appsettings set \
             --name pilot-blob-func \
             --resource-group pilot-service-rg \
             --settings \
               STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }} \
-              STORAGE_ACCOUNT_KEY=${{ secrets.STORAGE_ACCOUNT_KEY }} \
+              FUNCTIONS_WORKER_RUNTIME=python \
               SCM_DO_BUILD_DURING_DEPLOYMENT=true \
               ENABLE_ORYX_BUILD=true
-          
-          # 기존의 WEBSITE_RUN_FROM_PACKAGE 설정을 제거하여 원격 빌드를 허용함
+
+          # 기존의 WEBSITE_RUN_FROM_PACKAGE 설정 제거
           az functionapp config appsettings delete \
             --name pilot-blob-func \
             --resource-group pilot-service-rg \
             --setting-names WEBSITE_RUN_FROM_PACKAGE
 
-      # 6️⃣ 배포 (scm-do-build-during-deployment 유지)
+      # -----------------------------
+      # 6️⃣ Function 배포
+      # -----------------------------
       - name: Deploy Azure Function
         uses: Azure/functions-action@v1
         with:
