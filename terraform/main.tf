@@ -106,6 +106,7 @@ resource "azurerm_function_app_flex_consumption" "func" {
 
   app_settings = {
     "PYTHON_ENABLE_WORKER_EXTENSIONS" = "1"
+    "STORAGE_ACCOUNT_URL"             = "https://${azurerm_storage_account.storage.name}.blob.core.windows.net"
   }
 }
 
