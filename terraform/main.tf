@@ -100,10 +100,11 @@ resource "azurerm_function_app_flex_consumption" "func" {
 }
 
 # -----------------------------
-# 6. Role Assignment
+# 6. Role Assignment (Function MI → Blob)
 # -----------------------------
 resource "azurerm_role_assignment" "func_storage_blob_contrib" {
-  scope                = azurerm_storage_account.storage.id
+  for_each             = toset(["inbound", "archive", "out-united", "out-elf", "out-economics"])
+  scope                = azurerm_storage_container.containers[each.key].id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_function_app_flex_consumption.func.identity[0].principal_id
 }
