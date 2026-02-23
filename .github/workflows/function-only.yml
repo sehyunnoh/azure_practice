@@ -22,8 +22,8 @@ jobs:
       - name: Configure Function App Settings
         run: |
           az functionapp config appsettings set \
-            --name pilot-blob-func \
-            --resource-group pilot-service-rg \
+            --name dev-blob-func \
+            --resource-group dev-service-rg \
             --settings \
               STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }} \
               FUNCTIONS_WORKER_RUNTIME=python \
@@ -32,8 +32,8 @@ jobs:
 
           # 기존의 WEBSITE_RUN_FROM_PACKAGE 설정 제거
           az functionapp config appsettings delete \
-            --name pilot-blob-func \
-            --resource-group pilot-service-rg \
+            --name dev-blob-func \
+            --resource-group dev-service-rg \
             --setting-names WEBSITE_RUN_FROM_PACKAGE
 
       # -----------------------------
@@ -42,6 +42,6 @@ jobs:
       - name: Deploy Azure Function
         uses: Azure/functions-action@v1
         with:
-          app-name: pilot-blob-func
+          app-name: dev-blob-func
           package: function
           scm-do-build-during-deployment: true
