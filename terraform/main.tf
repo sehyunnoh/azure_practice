@@ -59,6 +59,12 @@ resource "azurerm_storage_container" "containers" {
   container_access_type = "private"
 }
 
+resource "azurerm_storage_container" "deploy" {
+  name                  = "deploy"
+  storage_account_id    = azurerm_storage_account.storage.id
+  container_access_type = "private"
+}
+
 # -----------------------------
 # 4. Flex Consumption Plan
 # -----------------------------
@@ -74,40 +80,28 @@ resource "azurerm_service_plan" "func_plan" {
 # -----------------------------
 # 5. Linux Function App (Flex Consumption)
 # -----------------------------
-resource "azurerm_linux_function_app" "func" {
+resource "azurerm_function_app_flex_consumption" "func" {
   name                = var.func_app_name
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   service_plan_id     = azurerm_service_plan.func_plan.id
 
-  storage_account_name          = azurerm_storage_account.storage.name
-  storage_uses_managed_identity = true
+  # Flex 필수 설정
+  storage_container_type      = "blobContainer"
+  storage_container_endpoint  = "${azurerm_storage_account.storage.primary_blob_endpoint}${azurerm_storage_container.deploy.name}"
+  storage_authentication_type = "StorageAccountConnectionString"
+  storage_access_key          = azurerm_storage_account.storage.primary_access_key
+
+  runtime_name    = "python"
+  runtime_version = "3.10"
+
+  maximum_instance_count = 50
+  instance_memory_in_mb  = 2048
+
+  site_config {}
 
   identity {
     type = "SystemAssigned"
-  }
-
-  # 1. Unsupported block type 해결: 
-  # 최신 v4.x에서는 function_app_config 블록 대신 
-  # 아래와 같이 최상위 인자들을 사용하거나 site_config를 이용합니다.
-
-  site_config {
-    application_stack {
-      python_version = "3.10"
-    }
-
-    # 2. Unsupported argument 해결:
-    # Flex Consumption의 메모리와 HTTP 복제 설정은 
-    # v4.x 특정 버전에서 site_config 내부가 아닌 최상위로 이동했을 수 있습니다.
-    # 만약 여기서도 에러가 나면 이 두 줄을 삭제하세요.
-  }
-
-  # 3. Flex Consumption 배포를 위한 핵심 (App Settings 방식)
-  # API가 요구하는 'FunctionAppConfig'를 만족시키기 위해 
-  # 컨테이너 경로를 명시적으로 환경 변수에 주입합니다.
-  app_settings = {
-    FUNCTIONS_WORKER_RUNTIME = "python"
-    WEBSITE_RUN_FROM_PACKAGE = "https://${azurerm_storage_account.storage.name}.blob.core.windows.net/${azurerm_storage_container.containers["deploy"].name}"
   }
 }
 
@@ -117,5 +111,5 @@ resource "azurerm_linux_function_app" "func" {
 resource "azurerm_role_assignment" "func_storage_blob_contrib" {
   scope                = azurerm_storage_account.storage.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_linux_function_app.func.identity[0].principal_id
+  principal_id         = azurerm_function_app_flex_consumption.func.identity[0].principal_id
 }
