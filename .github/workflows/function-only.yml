@@ -26,7 +26,6 @@ jobs:
             --settings \
               AzureWebJobsStorage="${{ secrets.AZURE_STORAGE_KEY_CONNECTION_STRING }}" \
               STORAGE_ACCOUNT_URL="${{ secrets.STORAGE_ACCOUNT_URL }}" \
-              FUNCTIONS_WORKER_RUNTIME=python
 
       # 4️⃣ 배포 (Flex Consumption 전용)
       - name: Deploy Azure Function
