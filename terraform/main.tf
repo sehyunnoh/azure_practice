@@ -108,33 +108,3 @@ resource "azurerm_role_assignment" "func_storage_blob_contrib" {
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_function_app_flex_consumption.func.identity[0].principal_id
 }
-
-# -----------------------------
-# 7. Event Grid Subscription (Blob → Function)
-# -----------------------------
-resource "azurerm_eventgrid_event_subscription" "inbound_blob_subscription" {
-  name  = "inbound-blob-subscription"
-  scope = azurerm_storage_account.storage.id
-
-  included_event_types = [
-    "Microsoft.Storage.BlobCreated"
-  ]
-
-  azure_function_endpoint {
-    function_id = azurerm_function_app_flex_consumption.func.id
-  }
-
-  retry_policy {
-    max_delivery_attempts = 5
-    event_time_to_live    = 1440
-  }
-
-  # subject filtering for blob container path
-  subject_filter {
-    subject_begins_with = "/blobServices/default/containers/inbound/"
-  }
-
-  depends_on = [
-    azurerm_role_assignment.func_storage_blob_contrib
-  ]
-}

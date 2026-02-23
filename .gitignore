@@ -44,6 +44,7 @@ terraform/.terraform/
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 bootstrap/.terraform/
+eventgrid/.terraform/
 
 # Python virtual environment (if created at root)
 */.venv/

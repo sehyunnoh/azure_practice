@@ -1,0 +1,46 @@
+name: Deploy EventGrid Subscription
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-eventgrid:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get Function Key
+        id: get_func_key
+        run: |
+          FUNC_KEY=$(az functionapp function keys list \
+            --name dev-blob-func \
+            --resource-group dev-service-rg \
+            --function-name InboundRouter \
+            --query "default" -o tsv)
+          echo "function_key=$FUNC_KEY" >> $GITHUB_OUTPUT
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan \
+          -var "resource_group_name=dev-service-rg" \
+          -var "storage_account_name=devappstorage123" \
+          -var "function_app_name=dev-blob-func" \
+          -var "function_key=${{ steps.get_func_key.outputs.function_key }}"
+        working-directory: ./terraform
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+        working-directory: ./terraform
