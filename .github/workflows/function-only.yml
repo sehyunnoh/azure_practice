@@ -18,14 +18,15 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3️⃣ 최소 App Settings만 설정
-      - name: Configure Function App
+      - name: Set Function App App Settings
         run: |
           az functionapp config appsettings set \
             --name dev-blob-func \
             --resource-group dev-service-rg \
             --settings \
-              STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }}
+              AzureWebJobsStorage="${{ secrets.AZURE_STORAGE_KEY_CONNECTION_STRING }}" \
+              STORAGE_ACCOUNT_URL="${{ secrets.STORAGE_ACCOUNT_URL }}" \
+              FUNCTIONS_WORKER_RUNTIME=python
 
       # 4️⃣ 배포 (Flex Consumption 전용)
       - name: Deploy Azure Function
