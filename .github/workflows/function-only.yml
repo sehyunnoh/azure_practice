@@ -26,7 +26,6 @@ jobs:
             --resource-group dev-service-rg \
             --settings \
               STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }} \
-              FUNCTIONS_WORKER_RUNTIME=python \
               SCM_DO_BUILD_DURING_DEPLOYMENT=true \
               ENABLE_ORYX_BUILD=true
 
