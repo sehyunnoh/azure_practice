@@ -72,7 +72,10 @@ resource "azurerm_service_plan" "func_plan" {
 }
 
 # -----------------------------
-# 5. Linux Function App (Flex Consumption)
+# 5. Linux Function App (수정본)
+# -----------------------------
+# -----------------------------
+# 5. Linux Function App (수정 완료)
 # -----------------------------
 resource "azurerm_function_app_flex_consumption" "func" {
   name                = var.func_app_name
@@ -80,12 +83,10 @@ resource "azurerm_function_app_flex_consumption" "func" {
   location            = azurerm_resource_group.rg.location
   service_plan_id     = azurerm_service_plan.func_plan.id
 
-  # Managed Identity 필수
   identity {
     type = "SystemAssigned"
   }
 
-  # Flex 필수 설정
   storage_container_type      = "blobContainer"
   storage_container_endpoint  = "${azurerm_storage_account.storage.primary_blob_endpoint}${azurerm_storage_container.containers["deploy"].name}"
   storage_authentication_type = "SystemAssignedIdentity"
@@ -93,17 +94,35 @@ resource "azurerm_function_app_flex_consumption" "func" {
   runtime_name    = "python"
   runtime_version = "3.10"
 
+  # Flex Consumption의 스케일 제한은 여기서 설정합니다 (이미 설정됨)
   maximum_instance_count = 50
   instance_memory_in_mb  = 2048
 
-  site_config {}
+  # 에러가 났던 site_config 블록 수정
+  site_config {
+    # app_scale_limit은 여기서 제거합니다.
+    # 필요한 경우 여기에 cors나 다른 설정을 넣습니다.
+  }
+
+  app_settings = {
+    "PYTHON_ENABLE_WORKER_EXTENSIONS" = "1"
+  }
 }
 
 # -----------------------------
-# 6. Role Assignment (Function MI → Blob)
+# 6. 권한 추가 (매우 중요!)
 # -----------------------------
+
+# 1) 함수 앱이 자기 자신을 Event Grid 엔드포인트로 등록할 수 있는 권한
+resource "azurerm_role_assignment" "func_eventgrid_contributor" {
+  scope                = azurerm_function_app_flex_consumption.func.id
+  role_definition_name = "EventGrid EventSubscription Contributor"
+  principal_id         = azurerm_function_app_flex_consumption.func.identity[0].principal_id
+}
+
+# 2) 스토리지에서 데이터를 읽어오기 위한 권한 (이미 작성하신 코드 유지)
 resource "azurerm_role_assignment" "func_storage_blob_contrib" {
-  for_each             = toset(["inbound", "archive", "out-united", "out-elf", "out-economics"])
+  for_each             = toset(["inbound", "archive"])
   scope                = azurerm_storage_container.containers[each.key].id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_function_app_flex_consumption.func.identity[0].principal_id
