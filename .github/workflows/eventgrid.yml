@@ -18,7 +18,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3️⃣ EventGrid Subscription 생성
+      # 3️⃣ EventGrid Subscription 생성 (수정본)
       - name: Create EventGrid Subscription
         run: |
           az eventgrid event-subscription create \
@@ -26,6 +26,5 @@ jobs:
             --source-resource-id "/subscriptions/${{ secrets.AZ_SUBSCRIPTION }}/resourceGroups/dev-service-rg/providers/Microsoft.Storage/storageAccounts/devappstorage123" \
             --endpoint-type azurefunction \
             --endpoint "/subscriptions/${{ secrets.AZ_SUBSCRIPTION }}/resourceGroups/dev-service-rg/providers/Microsoft.Web/sites/dev-blob-func/functions/InboundRouter" \
-            --delivery-identity systemassigned \
             --included-event-types "Microsoft.Storage.BlobCreated" \
             --subject-begins-with "/blobServices/default/containers/inbound/"
