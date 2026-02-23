@@ -1,4 +1,4 @@
-name: Deploy Azure Function
+name: Deploy Azure Function (Flex Consumption)
 
 on:
   workflow_dispatch:
@@ -8,39 +8,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ 코드 체크아웃
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 2️⃣ Azure 로그인 (Service Principal 사용)
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # -----------------------------
-      # 5️⃣ Function App 환경 변수 설정 (MSI 사용)
-      # -----------------------------
-      - name: Configure Function App Settings
+      # 3️⃣ Function App App Settings 구성
+      - name: Configure Function App
         run: |
           az functionapp config appsettings set \
             --name dev-blob-func \
             --resource-group dev-service-rg \
             --settings \
-              STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }} \
-              SCM_DO_BUILD_DURING_DEPLOYMENT=true \
-              ENABLE_ORYX_BUILD=true
+              STORAGE_ACCOUNT_URL=${{ secrets.STORAGE_ACCOUNT_URL }}
 
-          # 기존의 WEBSITE_RUN_FROM_PACKAGE 설정 제거
+          # Flex Consumption에서는 원격 빌드 관련 App Settings 제거
           az functionapp config appsettings delete \
             --name dev-blob-func \
             --resource-group dev-service-rg \
-            --setting-names WEBSITE_RUN_FROM_PACKAGE
+            --setting-names SCM_DO_BUILD_DURING_DEPLOYMENT ENABLE_ORYX_BUILD WEBSITE_RUN_FROM_PACKAGE
 
-      # -----------------------------
-      # 6️⃣ Function 배포
-      # -----------------------------
+      # 4️⃣ 배포 (Flex Consumption 전용)
       - name: Deploy Azure Function
         uses: Azure/functions-action@v1
         with:
           app-name: dev-blob-func
           package: function
-          scm-do-build-during-deployment: true
+          remote-build: true  # Flex Consumption 필수
