@@ -1,0 +1,11 @@
+- Requirments
+  - 5개의 blob storage가 있다. (inbound, archive, out-united, out-elf, out-economics)
+  - 한개의 azure function이 있다.
+  - 매주 수요일에 3개의 파일이 inbound blob storage에 업로드 된다. (2026-02-23-elf.csv, 2026-02-23-economics.csv, 2026-02-23-united.csv)
+  - inbound blob storage에 파일이 업로드 되면 azure function이 트리거 된다.
+  - azure function은 업로드된 파일을 체크 한뒤 validation 체크를 한다.
+  - validation 체크는 다음과 같다.
+    - 파일명은 {date}-{source}.csv 형식이어야 한다. (ex: 2026-02-23-elf.csv)
+    - source는 elf, economics, united 중 하나여야 한다.
+    - 파일은 비어 있으면 안된다.
+  - validation 체크가 통과되면 파일을 archive blob storage에 복사하고, 각 source에 맞는 out blob storage로 복사한다. (ex: 2026-02-23-elf.csv -> out-elf blob storage)
