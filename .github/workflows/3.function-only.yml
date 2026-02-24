@@ -28,7 +28,7 @@ jobs:
           echo "RG_NAME=$(terraform output -raw resource_group_name)" >> $GITHUB_ENV
           echo "FUNC_NAME=$(terraform output -raw function_app_name)" >> $GITHUB_ENV
 
-      - name: Set Function App App Settings
+      - name: Set Function App Settings
         run: |
           az functionapp config appsettings set \
             --name $FUNC_NAME \
@@ -41,7 +41,7 @@ jobs:
       - name: Deploy Azure Function
         uses: Azure/functions-action@v1
         with:
-          app-name: dev-blob-func
+          app-name: ${{ env.FUNC_NAME }}
           package: function
           remote-build: true
           respect-pom-xml: false
