@@ -1,4 +1,4 @@
-name: Create EventGrid Subscription
+name: 4.Create EventGrid Subscription
 
 on:
   workflow_dispatch:

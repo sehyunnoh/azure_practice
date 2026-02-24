@@ -1,4 +1,4 @@
-name: Deploy Azure Function (Flex Consumption)
+name: 3.Deploy Azure Function (Flex Consumption)
 
 on:
   workflow_dispatch:
@@ -18,11 +18,18 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Get Terraform Outputs
+        working-directory: terraform
+        run: |
+          terraform init -input=false -backend-config=backend.hcl
+          echo "RG_NAME=$(terraform output -raw resource_group_name)" >> $GITHUB_ENV
+          echo "FUNC_NAME=$(terraform output -raw function_app_name)" >> $GITHUB_ENV
+
       - name: Set Function App App Settings
         run: |
           az functionapp config appsettings set \
-            --name dev-blob-func \
-            --resource-group dev-service-rg \
+            --name $FUNC_NAME \
+            --resource-group $RG_NAME \
             --settings \
               AzureWebJobsStorage="${{ secrets.AZURE_STORAGE_KEY_CONNECTION_STRING }}" \
               STORAGE_ACCOUNT_URL="${{ secrets.STORAGE_ACCOUNT_URL }}" \

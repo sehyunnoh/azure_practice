@@ -1,4 +1,4 @@
-name: Terraform Destroy
+name: 2.Terraform Apply
 
 on:
   workflow_dispatch:
@@ -21,8 +21,12 @@ jobs:
 
       - name: Terraform Init
         working-directory: terraform
-        run: terraform init -input=false
+        run: terraform init -input=false -backend-config=backend.hcl
 
-      - name: Terraform Destroy
+      - name: Terraform Plan
         working-directory: terraform
-        run: terraform destroy -auto-approve -input=false
+        run: terraform plan -out=tfplan -input=false
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve tfplan
