@@ -8,23 +8,83 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ 코드 체크아웃
       - uses: actions/checkout@v4
 
-      # 2️⃣ Terraform 설치
       - uses: hashicorp/setup-terraform@v3
 
-      # 3️⃣ Azure 로그인
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 4️⃣ Terraform Init (local backend)
-      - name: Terraform Init
+      - name: Parse tfvars
+        id: tfvars
+        working-directory: bootstrap
+        run: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          # Parse terraform.tfvars into environment variables
+          while IFS='= ' read -r key value; do
+            if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+              value="${value%\"}"
+              value="${value#\"}"
+              echo "$key=$value" >> $GITHUB_ENV
+            fi
+          done < terraform.tfvars
+
+      - name: Terraform Init (local backend)
         working-directory: bootstrap
         run: terraform init -input=false
 
-      # 5️⃣ Backend 생성/조정
-      - name: Terraform Apply
+      - name: Smart Import or Create Backend Resources
+        working-directory: bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RG="$backend_rg_name"
+          SA="$backend_storage_name"
+          CONTAINER="$backend_container_name"
+          LOCATION="$backend_location"
+          SUBSCRIPTION=$(az account show --query id -o tsv)
+
+          echo "🔍 Checking Resource Group..."
+          if az group show --name "$RG" &>/dev/null; then
+            echo "➡️ RG exists. Importing..."
+            terraform import azurerm_resource_group.mgmt \
+              "/subscriptions/$SUBSCRIPTION/resourceGroups/$RG" || true
+          else
+            echo "➡️ RG does not exist. Terraform will create it."
+          fi
+
+          echo "🔍 Checking Storage Account..."
+          if az storage account show --name "$SA" --resource-group "$RG" &>/dev/null; then
+            echo "➡️ Storage Account exists. Importing..."
+            terraform import azurerm_storage_account.backend \
+              "/subscriptions/$SUBSCRIPTION/resourceGroups/$RG/providers/Microsoft.Storage/storageAccounts/$SA" || true
+          else
+            echo "➡️ Storage Account does not exist. Terraform will create it."
+          fi
+
+          echo "🔍 Checking Storage Container..."
+          if az storage account show --name "$SA" --resource-group "$RG" &>/dev/null; then
+            echo "➡️ Container exists? Checking..."
+            EXISTS=$(az storage container exists \
+              --name "$CONTAINER" \
+              --account-name "$SA" \
+              --query "exists" -o tsv || echo "false")
+
+            if [[ "$EXISTS" == "true" ]]; then
+              echo "➡️ Container exists. Importing..."
+              terraform import azurerm_storage_container.tfstate \
+                "/subscriptions/$SUBSCRIPTION/resourceGroups/$RG/providers/Microsoft.Storage/storageAccounts/$SA/blobServices/default/containers/$CONTAINER" || true
+            else
+              echo "➡️ Container does not exist. Terraform will create it."
+            fi
+          else
+            echo "⚠️ Storage Account not accessible. Skipping container import."
+          fi
+
+      - name: Terraform Apply (create or reconcile backend)
         working-directory: bootstrap
         run: terraform apply -auto-approve -input=false
